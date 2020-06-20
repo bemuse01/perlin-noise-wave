@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <script src="three r107.js"></script>
+        <script src="simplex-noise.2.3.0.min.js"></script>
+        <script src="dat.gui.min.js"></script>
+        <script src="js/lib/index_53/index_53_three_object_method.js"></script>
+        <script src="js/lib/index_53/index_53_three_move_method.js"></script>
+		<style>
+            body{
+                background: black;
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+            }
+            #background{
+                /* background: url('image/bg/6.jpg') no-repeat center center / contain; */
+                width: 100vw;
+                height: 100vh;
+            }
+            #canvas{
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+		</style>
+	</head>
+	<body>
+    <div id="background"></div>
+    <canvas id="canvas"></canvas>
+    
+	<script>
+    let width, height, vWidth, vHeight, renderer, scene, camera
+    let audio, analyser, context, dataArray
+    let clock = new THREE.Clock(), simplex = new SimplexNoise()
+    let radian = Math.PI / 180, gui
+
+	width = window.innerWidth
+    height = window.innerHeight
+
+    let group = {
+        plane: new THREE.Group()
+    }
+
+    let API = {
+        rotationX: 0,
+        rotationY: 0,
+        rotationZ: 0
+    }
+    
+    init()
+	function init(){
+        scene = new THREE.Scene()
+        
+		renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, canvas: canvas})
+		renderer.setSize(width, height)
+		renderer.setClearColor(0x000000)
+        renderer.setClearAlpha(0.0)
+
+		camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000)
+		scene.add(camera)
+        camera.position.z = 50
+
+        objects()
+
+        animate()
+
+        initGui()
+
+        window.addEventListener('resize', onWindowResize, false)
+    }
+
+    function objects(){
+        object.createPlane(scene, group.plane, simplex)
+    }
+
+    function moves(){
+        let time = window.performance.now()
+        move.movePlaneVertices(simplex, time, group.plane.children[0])
+    }
+
+    function transforms(x, y, z){
+        for(let g in group) group[g].rotation.set(x, y, z)
+    }
+
+    function updateRotation(){
+        transforms(API.rotationX * radian, API.rotationY * radian, API.rotationZ * radian)
+    }
+
+    function initGui() {
+        gui = new dat.GUI();
+        gui.add( API, 'rotationX', -90, 90 ).name( 'rotation.x' ).onChange( updateRotation )
+        gui.add( API, 'rotationY', -90, 90 ).name( 'rotation.y' ).onChange( updateRotation )
+        gui.add( API, 'rotationZ', -90, 90 ).name( 'rotation.z' ).onChange( updateRotation )
+    }
+
+    function getVisibleHeight(depth){
+        let cameraOffset = camera.position.z
+        if(depth < cameraOffset) depth -= cameraOffset
+        else depth += cameraOffset
+        let vFov = camera.fov * radian
+        return 2 * Math.tan(vFov / 2) * Math.abs(depth)
+    }
+
+    function getVisibleWidth(depth){
+        let height = getVisibleHeight(depth)
+        return height * camera.aspect
+    }
+
+    function onWindowResize(){
+		width = window.innerWidth
+		height = window.innerHeight
+
+		camera.aspect = width / height
+		camera.updateProjectionMatrix()
+
+		renderer.setSize(width, height)
+    }
+
+	function render(){
+        moves()
+		camera.lookAt(scene.position)
+		renderer.render(scene, camera)
+    }
+
+	function animate(){
+		render()
+		requestAnimationFrame(animate)
+	}
+	</script>
+	</body>
+</html>
